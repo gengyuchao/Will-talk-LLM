@@ -44,12 +44,12 @@ async def process_audio(audio_data):
         print("Error Empyt text.")
 
 
-async def test_process(prompt):
+def test_process(prompt):
     openai_handler = OpenAIHandler()
     output_queue = queue.Queue()
 
-    # 启动后台任务来异步处理队列中的文本并进行 TTS
-    tts_task = asyncio.create_task(process_queue(output_queue))
+    # # 启动后台任务来异步处理队列中的文本并进行 TTS
+    # tts_task = asyncio.create_task(process_queue(output_queue))
 
     # # 使用 ThreadPoolExecutor 在异步环境中运行同步的 get_openai_response
     # loop = asyncio.get_running_loop()
@@ -60,7 +60,7 @@ async def test_process(prompt):
     # output_queue.put("STOP")
     # await tts_task
 
-    openai_handler.get_openai_response(prompt)
+    openai_handler.get_openai_response(prompt,output_queue)
 
 # 调用测试函数并传入一个示例的用户输入
 if __name__ == "__main__":

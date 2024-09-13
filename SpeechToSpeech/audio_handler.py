@@ -19,11 +19,11 @@ def int2float(sound):
 class VADHandler:
     def __init__(self, audio_enhancement=False):
         self.model, _ = torch.hub.load(
-            repo_or_dir='snakers4/silero-vad', 
+            repo_or_dir='/home/gyc/.cache/torch/hub/snakers4_silero-vad_master', # 'snakers4/silero-vad', 
             model='silero_vad', 
             trust_repo=True, 
             force_reload=False, 
-            # source="local"
+            source="local"
         )
         self.sample_rate = 16000
         self.iterator = VADIterator(
@@ -89,14 +89,22 @@ class VADHandler:
         )
         return stream, audio
 
-    async def record_and_process(self, should_listen, callback):
+    async def record_and_process(self, listen_control, callback):
         stream, audio = self.setup_audio_stream()
-        while should_listen:
+        # print("listen Start")
+        while True:
             audio_chunk = stream.read(512)
             processed_audio = self.process_audio_chunk(audio_chunk)
             if processed_audio is not None:
+                # print("listen Stop")
+                stream.stop_stream()
                 enhanced_audio = self.enhance_audio(processed_audio)
                 await callback(enhanced_audio)
+                while not listen_control.is_set():
+                    pass
+                # print("listen Start")
+                stream.start_stream()
+                
         stream.stop_stream()
         stream.close()
         audio.terminate()
