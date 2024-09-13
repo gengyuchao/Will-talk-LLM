@@ -1,7 +1,7 @@
 import asyncio
 from audio_handler import VADHandler
 from openai_handler import OpenAIHandler
-from tts_handler import text_to_speech,text_to_print
+import tts_handler_2
 from stt_handler import InferenceHandler
 import soundfile as sf
 import queue
@@ -13,9 +13,11 @@ from threading import Event
 
 output_queue = queue.Queue()
 openai_handler = OpenAIHandler()
+listen_control = Event()
+generating = Event()
 
 
-def speak_from_queue(output_queue,listen_control):
+def speak_from_queue_old(output_queue,listen_control):
     """
     从队列中读取文本，并用TTS语音合成器进行实时播报。
     
@@ -52,9 +54,28 @@ def speak_from_queue(output_queue,listen_control):
             if not text:  # 如果队列为空，退出循环
                 break
             listen_control.clear()
-            # text_to_speech(text)
-            text_to_print(text)
+            text_to_speech(text)
+            # text_to_print(text)
             listen_control.set()
+
+
+
+def speak_from_queue(output_queue,listen_control):
+    """
+    从队列中读取文本，并用TTS语音合成器进行实时播报。
+    
+    :param output_queue: 
+    """
+
+    while True:
+        text = output_queue.get()  # 从队列中取出一个文本
+        if not text:  # 如果队列为空，退出循环
+            break
+        listen_control.clear()
+        # text_to_speech(text)
+        text_to_print(text)
+        stream_tts(text)
+        listen_control.set()
 
 
 async def process_audio(audio_data):
@@ -65,7 +86,9 @@ async def process_audio(audio_data):
     print(user_text)
     if user_text != "":
         print("AI:")
-        openai_handler.get_openai_response(user_text, output_queue)
+        generating.set()
+        openai_handler.get_openai_response(user_text, tts_handler_2.sentence_queue)
+        generating.clear()
         print("")
 
         # await text_to_speech(ai_response)
@@ -78,7 +101,7 @@ async def process_audio(audio_data):
 
 
 async def test_process(prompt):
-    listen_control = Event()
+    # listen_control = Event()
     # 启动后台任务来异步处理队列中的文本并进行 TTS
   
     # 启动语音输出线程
@@ -98,15 +121,14 @@ async def main():
     vad_handler = VADHandler(audio_enhancement=True)
     
     should_listen = Event()
-    listen_control = Event()
 
     should_listen.set()
     listen_control.set()
 
-    # 启动语音输出线程
-    thread = threading.Thread(target=speak_from_queue, args=(output_queue,listen_control))
-    thread.daemon = True  # 设为守护线程，程序结束时自动销毁线程
-    thread.start()  # 启动线程
+    # # 启动语音输出线程
+    # thread = threading.Thread(target=speak_from_queue, args=(output_queue,listen_control))
+    # thread.daemon = True  # 设为守护线程，程序结束时自动销毁线程
+    # thread.start()  # 启动线程
 
     print("USER:")
     await vad_handler.record_and_process(listen_control, process_audio)
@@ -114,4 +136,8 @@ async def main():
 
 
 if __name__ == "__main__":
+
+    threading.Thread(target=tts_handler_2.generate_audio).start()
+    threading.Thread(target=tts_handler_2.play_audio, args=(listen_control,generating,)).start()
+
     asyncio.run(main())
