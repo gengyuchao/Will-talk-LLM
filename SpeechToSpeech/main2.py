@@ -1,7 +1,7 @@
 import asyncio
 from audio_handler import VADHandler
 from openai_handler import OpenAIHandler
-from tts_handler import text_to_speech
+from tts_handler import text_to_speech,text_to_print
 from stt_handler import InferenceHandler
 import soundfile as sf
 import queue
@@ -52,7 +52,8 @@ def speak_from_queue(output_queue,listen_control):
             if not text:  # 如果队列为空，退出循环
                 break
             listen_control.clear()
-            text_to_speech(text)
+            # text_to_speech(text)
+            text_to_print(text)
             listen_control.set()
 
 
@@ -77,12 +78,11 @@ async def process_audio(audio_data):
 
 
 async def test_process(prompt):
-    openai_handler = OpenAIHandler()
-
+    listen_control = Event()
     # 启动后台任务来异步处理队列中的文本并进行 TTS
   
     # 启动语音输出线程
-    thread = threading.Thread(target=speak_from_queue, args=(output_queue,))
+    thread = threading.Thread(target=speak_from_queue, args=(output_queue,listen_control))
     thread.daemon = True  # 设为守护线程，程序结束时自动销毁线程
     thread.start()  # 启动线程
 

@@ -19,7 +19,7 @@ def int2float(sound):
 class VADHandler:
     def __init__(self, audio_enhancement=False):
         self.model, _ = torch.hub.load(
-            repo_or_dir='/home/gyc/.cache/torch/hub/snakers4_silero-vad_master', # 'snakers4/silero-vad', 
+            repo_or_dir='/home/test/.cache/torch/hub/snakers4_silero-vad_master', # 'snakers4/silero-vad', 
             model='silero_vad', 
             trust_repo=True, 
             force_reload=False, 

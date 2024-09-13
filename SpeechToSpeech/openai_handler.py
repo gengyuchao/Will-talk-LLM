@@ -42,16 +42,19 @@ class OpenAIHandler:
                 print(delta,end="",flush=True)
                 # 句子断句逻辑
                 if len(current_sentence) > 4 and re.search(r'[.!?；：！？。]\s*|\n', current_sentence[5:]):
-                    match = re.search(r'(.*?)([.!?；：！？。])\s*', current_sentence)
+                    # 使用正则表达式查找标点符号，忽略数字后的点号
+                    match = re.search(r'(.*?)(?<!\d)[.!?；：！？。]\s*|\n', current_sentence)
                     if match:
-                        sentence = match.group(0).strip()
-                        output_queue.put(sentence.replace("*",""))
-                        current_sentence = current_sentence[len(sentence):].strip()
+                        sentence = match.group(0)
+                        output_queue.put(sentence.replace("*", "").strip())
+                        current_sentence = current_sentence[len(sentence):]
+
 
         # 如果最后一句话没有结束符，可以在这里处理
         if current_sentence:
-            sentence = current_sentence.strip()
-            output_queue.put(sentence.replace("*",""))
+            sentence = current_sentence
+            output_queue.put(sentence.replace("*","").strip())
+            print("")
 
         # 添加完整的历史记录
         self.add_to_history(ai_response)

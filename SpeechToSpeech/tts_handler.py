@@ -33,3 +33,7 @@ def text_to_speech(text):
         audio = AudioSegment.from_mp3(audio_buffer)
         # 播放音频
         play(audio)
+
+
+def text_to_print(text):
+    print("New text:[" + text+"]")
